@@ -1,5 +1,8 @@
 *.py[cod]
 
+renders/*.wav
+sounds/*.wav
+
 # C extensions
 *.so
 
