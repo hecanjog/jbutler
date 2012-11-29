@@ -1,4 +1,5 @@
 from pippi import dsp
+from pippi import tune
 import math
 
 dsp.quiet = False
@@ -6,6 +7,29 @@ dsp.timer('start')
 dsp.seed('jbutler')
 
 cathedral = dsp.read('sounds/cathedral.wav')
+
+def fade(snd, time=dsp.mstf(1)):
+    first = dsp.cut(snd, 0, time)
+    middle = dsp.cut(snd, time, dsp.flen(snd) - (time * 2))
+    last = dsp.cut(snd, dsp.flen(middle) + time, time)
+
+    snd = dsp.env(first, 'line') + middle + dsp.env(last, 'phasor')
+    
+    return snd
+
+def ding(length=44100, notes=[['g', 3], ['a', 4], ['e', 3]]):
+    tone = dsp.read('sounds/ding.wav').data
+
+    freqs = [ tune.ntf(note[0], note[1]) / tune.ntf('g', 3) for note in notes ]
+
+    tones = [ dsp.transpose(tone, freq) for freq in freqs ]
+    tones = [ dsp.cut(tones[i % len(tones)], dsp.mstf(dsp.rand(0, 100)), length + dsp.randint(0, 1000)) for i in range(32) ]
+
+    tones = [ dsp.drift(tone, 0.03) for tone in tones ]
+
+    tones = [ fade(tone) for tone in tones ]
+    
+    return ''.join(tones) 
 
 def slurp(snd):
     snd = dsp.split(snd, dsp.flen(snd) / 100)
@@ -64,10 +88,30 @@ def smear(snd):
 
 out = ''
 
-sparks = dsp.mix([ ''.join([ fracture(cathedral.data) for i in range(20) ]) for i in range(3) ])
+#sparks = dsp.mix([ ''.join([ fracture(cathedral.data) for i in range(20) ]) for i in range(3) ])
+
 smears = dsp.mix([ smear(cathedral.data) for i in range(10) ])
 
-out = dsp.mix([sparks * 2, dsp.env(smears, 'line')], False)
+notes = [
+        ['g', 3],
+        ['a', 4],
+        ['e', 3],
+        ['d', 4],
+        ]
+
+l1 = ding(30000, notes)
+
+notes = [
+        ['e', 4],
+        ['d', 4],
+        ['a', 4],
+        ]
+
+l2 = ding(20000, notes)
+
+dings = dsp.mix([l1, l2])
+
+out = dsp.mix([dsp.amp(dings, 0.5), smears])
 
 dsp.write(out, 'jj', False)
 
