@@ -7,6 +7,7 @@ dsp.timer('start')
 dsp.seed('jbutler')
 
 cathedral = dsp.read('sounds/cathedral.wav')
+tone = dsp.read('sounds/ding.wav').data
 
 def fade(snd, time=dsp.mstf(1)):
     first = dsp.cut(snd, 0, time)
@@ -17,15 +18,28 @@ def fade(snd, time=dsp.mstf(1)):
     
     return snd
 
-def ding(length=44100, notes=[['g', 3], ['a', 4], ['e', 3]]):
-    tone = dsp.read('sounds/ding.wav').data
+def ding(tone, tlength=88200, nlength=1000):
 
-    freqs = [ tune.ntf(note[0], note[1]) / tune.ntf('g', 3) for note in notes ]
+    def sequence(tonic='g'):
+        numdegrees = dsp.randint(2, 8)
+        degrees = [1,3,5,8,9,10,11,12]
+        scale = [ dsp.randchoose(degrees) for i in range(numdegrees) ]
+        scale = tune.fromdegrees(scale, 2, tonic, tune.major, tune.terry) 
+        
+        return scale
+
+    numtones = tlength / nlength
+    numtones = 1 if numtones < 1 else numtones
+
+    freqs = [ note / tune.ntf('g', 3) for note in sequence('g') ]
 
     tones = [ dsp.transpose(tone, freq) for freq in freqs ]
-    tones = [ dsp.cut(tones[i % len(tones)], dsp.mstf(dsp.rand(0, 100)), length + dsp.randint(0, 1000)) for i in range(32) ]
+    #tones = [ dsp.cut(tones[i % len(tones)], dsp.mstf(dsp.rand(0, 100)), nlength + dsp.randint(0, 500)) for i in range(numtones) ]
+    tones = [ dsp.cut(tones[i % len(tones)], dsp.mstf(dsp.rand(0, 100)), nlength) for i in range(numtones) ]
 
-    tones = [ dsp.drift(tone, 0.03) for tone in tones ]
+    #tones = [ dsp.drift(tone, 0.03) for tone in tones ]
+    curve = dsp.breakpoint([0] + [ dsp.rand(0, 0.06) for i in range(3) ], len(tones))
+    tones = [ dsp.drift(tone, curve[index % len(curve)]) for index, tone in enumerate(tones) ]
 
     tones = [ fade(tone) for tone in tones ]
     
@@ -90,28 +104,15 @@ out = ''
 
 #sparks = dsp.mix([ ''.join([ fracture(cathedral.data) for i in range(20) ]) for i in range(3) ])
 
-smears = dsp.mix([ smear(cathedral.data) for i in range(10) ])
+#smears = dsp.mix([ smear(cathedral.data) for i in range(10) ])
 
-notes = [
-        ['g', 3],
-        ['a', 4],
-        ['e', 3],
-        ['d', 4],
-        ]
+tlen = dsp.stf(2)
 
-l1 = ding(30000, notes)
+for seg in range(30):
+    nlen = dsp.mstf(dsp.randint(30, 300))
+    out += dsp.mix([ding(tone, tlen, nlen) for i in range(3)])
 
-notes = [
-        ['e', 4],
-        ['d', 4],
-        ['a', 4],
-        ]
-
-l2 = ding(20000, notes)
-
-dings = dsp.mix([l1, l2])
-
-out = dsp.mix([dsp.amp(dings, 0.5), smears])
+#out = dsp.mix([dsp.amp(dings, 0.5), smears])
 
 dsp.write(out, 'jj', False)
 
