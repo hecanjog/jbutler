@@ -22,9 +22,11 @@ def ding(tone, tlength=88200, nlength=1000):
 
     def sequence(tonic='g'):
         numdegrees = dsp.randint(2, 8)
-        degrees = [1,3,5,8,9,10,11,12]
-        scale = [ dsp.randchoose(degrees) for i in range(numdegrees) ]
-        scale = tune.fromdegrees(scale, 2, tonic, tune.major, tune.terry) 
+        degrees = [1,5,8,11,12]
+        #scale = [ dsp.randchoose(degrees) for i in range(numdegrees) ]
+        scale = degrees[dsp.randint(0, 3):]
+        scale = dsp.randshuffle(scale)
+        scale = tune.fromdegrees(scale, 3, tonic, tune.major, tune.terry) 
         
         return scale
 
@@ -38,7 +40,7 @@ def ding(tone, tlength=88200, nlength=1000):
     tones = [ dsp.cut(tones[i % len(tones)], dsp.mstf(dsp.rand(0, 100)), nlength) for i in range(numtones) ]
 
     #tones = [ dsp.drift(tone, 0.03) for tone in tones ]
-    curve = dsp.breakpoint([0] + [ dsp.rand(0, 0.06) for i in range(3) ], len(tones))
+    curve = dsp.breakpoint([0] + [ dsp.rand(0, 0.01) for i in range(3) ], len(tones))
     tones = [ dsp.drift(tone, curve[index % len(curve)]) for index, tone in enumerate(tones) ]
 
     tones = [ fade(tone) for tone in tones ]
@@ -106,11 +108,11 @@ out = ''
 
 #smears = dsp.mix([ smear(cathedral.data) for i in range(10) ])
 
-tlen = dsp.stf(2)
+tlen = dsp.stf(10)
 
-for seg in range(30):
-    nlen = dsp.mstf(dsp.randint(30, 300))
-    out += dsp.mix([ding(tone, tlen, nlen) for i in range(3)])
+for seg in range(10):
+    nlen = dsp.mstf(dsp.randint(2130, 3300))
+    out += dsp.mix([ding(tone, tlen, nlen) for i in range(2)])
 
 #out = dsp.mix([dsp.amp(dings, 0.5), smears])
 
