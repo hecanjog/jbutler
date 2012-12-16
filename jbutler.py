@@ -26,14 +26,14 @@ def ding(tone, tlength=88200, nlength=1000):
         #scale = [ dsp.randchoose(degrees) for i in range(numdegrees) ]
         scale = degrees[dsp.randint(0, 3):]
         scale = dsp.randshuffle(scale)
-        scale = tune.fromdegrees(scale, 3, tonic, tune.major, tune.terry) 
+        scale = tune.fromdegrees(scale, 1, tonic, tune.major, tune.terry) 
         
         return scale
 
     numtones = tlength / nlength
     numtones = 1 if numtones < 1 else numtones
 
-    freqs = [ note / tune.ntf('g', 3) for note in sequence('g') ]
+    freqs = [ note / tune.ntf('g', 4) for note in sequence('g') ]
 
     tones = [ dsp.transpose(tone, freq) for freq in freqs ]
     #tones = [ dsp.cut(tones[i % len(tones)], dsp.mstf(dsp.rand(0, 100)), nlength + dsp.randint(0, 500)) for i in range(numtones) ]
@@ -45,7 +45,7 @@ def ding(tone, tlength=88200, nlength=1000):
 
     tones = [ fade(tone) for tone in tones ]
     
-    return ''.join(tones) 
+    return dsp.amp(''.join(tones), 0.5)
 
 def slurp(snd):
     snd = dsp.split(snd, dsp.flen(snd) / 100)
@@ -104,18 +104,20 @@ def smear(snd):
 
 out = ''
 
-#sparks = dsp.mix([ ''.join([ fracture(cathedral.data) for i in range(20) ]) for i in range(3) ])
+sparks = dsp.mix([ ''.join([ fracture(cathedral.data) for i in range(20) ]) for i in range(3) ])
 
-#smears = dsp.mix([ smear(cathedral.data) for i in range(10) ])
+smears = dsp.mix([ smear(cathedral.data) for i in range(10) ])
 
-tlen = dsp.stf(10)
+tlen = dsp.stf(20)
 
-for seg in range(10):
-    nlen = dsp.mstf(dsp.randint(2130, 3300))
-    out += dsp.mix([ding(tone, tlen, nlen) for i in range(2)])
+dings = ''
+for seg in range(20):
+    nlen = dsp.mstf(dsp.randint(4130, 6300))
+    dings += dsp.mix([ding(tone, tlen, nlen) for i in range(2)])
 
-#out = dsp.mix([dsp.amp(dings, 0.5), smears])
+#out = dsp.mix([dsp.amp(dings, 0.8), smears, sparks])
+out = sparks 
 
-dsp.write(out, 'jj', False)
+dsp.write(out, 'sparks', False)
 
 dsp.timer('stop')
